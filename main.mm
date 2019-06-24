@@ -3,8 +3,10 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
-#import <Metal/Metal.h>
-#import <QuartzCore/CAMetalLayer.h>
+#include <Metal/Metal.h>
+#include <QuartzCore/CAMetalLayer.h>
+#include <image.h>
+#include <string>
 
 static void quit(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
@@ -23,7 +25,7 @@ int main(void)
 
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    GLFWwindow *window = glfwCreateWindow(640, 480, "GLFW Metal", NULL, NULL);
+    GLFWwindow *window = glfwCreateWindow(640*3, 480*3, "GLFW Metal", NULL, NULL);
     NSWindow *nswindow = glfwGetCocoaWindow(window);
     nswindow.contentView.layer = swapchain;
     nswindow.contentView.wantsLayer = YES;
@@ -31,6 +33,24 @@ int main(void)
     glfwSetKeyCallback(window, quit);
     MTLClearColor color = MTLClearColorMake(0, 0, 0, 1);
 
+    auto madoka = el::ImageData::load("../../madoka.jpg");
+    assert(madoka != nullptr);
+
+    auto texDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm
+                                                                      width:madoka->width
+                                                                     height:madoka->height
+                                                                  mipmapped:NO];
+    
+    const uint32_t bytesPerRow = 4 * madoka->width;
+    MTLRegion region = MTLRegionMake2D(0, 0, madoka->width, madoka->height);
+    id<MTLTexture> texture = [gpu newTextureWithDescriptor:texDesc];
+    [texture replaceRegion:region
+               mipmapLevel:0
+                 withBytes:madoka->stream.data()
+               bytesPerRow:bytesPerRow];
+    
+    NSLog(@"Hello world");
+    
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 

@@ -13,6 +13,7 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(glfw)
 
+include_directories(${ROOT_PATH})
 include_directories(${ROOT_PATH}/glfw/deps)
 include_directories(${ROOT_PATH}/glfw/include)
 
