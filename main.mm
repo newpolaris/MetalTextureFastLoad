@@ -23,6 +23,10 @@ struct TickTok
     tp point;
     
     TickTok() {
+        tic();
+    }
+    
+    void tic() {
         point = clock::now();
     }
     
@@ -56,32 +60,41 @@ int main(void)
 
     TickTok tick;
     
-    auto madoka = el::ImageData::load("../../madoka.jpg");
-    assert(madoka != nullptr);
+    auto miku = el::ImageData::load("../../miku.jpg");
+    assert(miku != nullptr);
 
     tick.tok("image load");
     
     auto texDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm
-                                                                      width:madoka->width
-                                                                     height:madoka->height
+                                                                      width:miku->width
+                                                                     height:miku->height
                                                                   mipmapped:NO];
+    
+    const uint32_t bytesPerRow = 4 * miku->width;
+    MTLRegion region = MTLRegionMake2D(0, 0, miku->width, miku->height);
+    id<MTLTexture> texture = [gpu newTextureWithDescriptor:texDesc];
+    auto data = miku->stream.data();
     
     tick.tok("texture create");
     
-    const uint32_t bytesPerRow = 4 * madoka->width;
-    MTLRegion region = MTLRegionMake2D(0, 0, madoka->width, madoka->height);
-    id<MTLTexture> texture = [gpu newTextureWithDescriptor:texDesc];
-    [texture replaceRegion:region
-               mipmapLevel:0
-                 withBytes:madoka->stream.data()
-               bytesPerRow:bytesPerRow];
-    
-    tick.tok("upload texture");
+    uint32_t frame = 0;
     
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
 
         @autoreleasepool {
+            
+            if (frame++ % 2 == 0) {
+                tick.tic();
+                
+                [texture replaceRegion:region
+                           mipmapLevel:0
+                             withBytes:data
+                           bytesPerRow:bytesPerRow];
+                
+                tick.tok("upload texture");
+            }
+            
             color.red = (color.red > 1.0) ? 0 : color.red + 0.01;
 
             id<CAMetalDrawable> surface = [swapchain nextDrawable];
