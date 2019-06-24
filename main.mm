@@ -7,6 +7,7 @@
 #include <QuartzCore/CAMetalLayer.h>
 #include <image.h>
 #include <string>
+#include <chrono>
 
 static void quit(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
@@ -14,6 +15,26 @@ static void quit(GLFWwindow *window, int key, int scancode, int action, int mods
         glfwSetWindowShouldClose(window, GLFW_TRUE);
     }
 }
+
+struct TickTok
+{
+    using clock = std::chrono::high_resolution_clock;
+    using tp = clock::time_point;
+    tp point;
+    
+    TickTok() {
+        point = clock::now();
+    }
+    
+    void tok(const char* str) {
+        auto last = clock::now();
+        auto timeElapsed = std::chrono::duration_cast<std::chrono::microseconds>(last - point);
+        auto elpased = static_cast<float>(timeElapsed.count() / 1000.0);
+        point = last;
+        
+        NSLog(@"[%s] %f ms", str, elpased);
+    }
+};
 
 int main(void)
 {
@@ -33,13 +54,19 @@ int main(void)
     glfwSetKeyCallback(window, quit);
     MTLClearColor color = MTLClearColorMake(0, 0, 0, 1);
 
+    TickTok tick;
+    
     auto madoka = el::ImageData::load("../../madoka.jpg");
     assert(madoka != nullptr);
 
+    tick.tok("image load");
+    
     auto texDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm
                                                                       width:madoka->width
                                                                      height:madoka->height
                                                                   mipmapped:NO];
+    
+    tick.tok("texture create");
     
     const uint32_t bytesPerRow = 4 * madoka->width;
     MTLRegion region = MTLRegionMake2D(0, 0, madoka->width, madoka->height);
@@ -49,7 +76,7 @@ int main(void)
                  withBytes:madoka->stream.data()
                bytesPerRow:bytesPerRow];
     
-    NSLog(@"Hello world");
+    tick.tok("upload texture");
     
     while (!glfwWindowShouldClose(window)) {
         glfwPollEvents();
