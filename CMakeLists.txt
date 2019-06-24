@@ -13,6 +13,9 @@ set(GLFW_INSTALL OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(glfw)
 
+include_directories(${ROOT_PATH}/glfw/deps)
+include_directories(${ROOT_PATH}/glfw/include)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -24,5 +27,7 @@ source_group("sources" FILES ${HEADER_LIST} ${SOURCE_LIST})
 
 add_executable(${SAMPLE_NAME} ${HEADER_LIST} ${SOURCE_LIST} ${SHADERS})
 
-list(APPEND ALL_LIBS "-framework QuartzCore" "-framework AppKit" "-framework Metal")
-target_link_libraries(${SAMPLE_NAME} glsw ${ALL_LIBS})
+target_link_libraries(${SAMPLE_NAME} PRIVATE glfw)
+target_link_libraries(${SAMPLE_NAME} PRIVATE "-framework AppKit")
+target_link_libraries(${SAMPLE_NAME} PRIVATE "-framework Metal")
+target_link_libraries(${SAMPLE_NAME} PRIVATE "-framework QuartzCore")
