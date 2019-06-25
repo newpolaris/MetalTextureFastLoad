@@ -16,4 +16,4 @@ RGB 5120 × 2880 jpg
 2019-06-25 01:30:50.877982+0900 MetalTextureFastLoad[13609:737635] [texture create] 0.589000 ms
 2019-06-25 01:30:51.728657+0900 MetalTextureFastLoad[13609:737635] [upload texture] 850.700989 ms
 
-
+https://github.com/bkaradzic/bgfx/blob/master/src/renderer_mtl.mm

@@ -2,14 +2,30 @@
 #include <stb_image.h>
 #include <string>
 
-using namespace el;
+namespace el {
 
+    
+uint32_t getBytesPerPixel(PixelFormat format)
+{
+    switch (format)
+    {
+    case PixelFormat::PixelFormatR8Unorm:
+    case PixelFormat::PixelFormatA8Unorm:
+        return 1;
+    case PixelFormat::PixelFormatRGB8Unorm:
+        return 3;
+    case PixelFormat::PixelFormatRGBA8Unorm:
+        return 4;
+    }
+    return 0;
+}
+    
 ImageDataPtr ImageData::load(const std::string& filename)
 {
     stbi_set_flip_vertically_on_load(true);
 
     int width = 0, height = 0, components = 0;
-    auto imagedata = (char*)stbi_load(filename.c_str(), &width, &height, &components, 0);
+    auto imagedata = (char*)stbi_load(filename.c_str(), &width, &height, &components, 3);
     if (!imagedata) return nullptr;
 
     // 1-byte aligment image
@@ -34,3 +50,10 @@ ImageDataPtr ImageData::load(const std::string& filename)
 
     return container;
 }
+
+uint32_t ImageData::getBytesPerRow() const
+{
+    return width * getBytesPerPixel(format);
+}
+    
+} // namespace el

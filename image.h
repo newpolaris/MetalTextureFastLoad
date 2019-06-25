@@ -139,18 +139,34 @@ namespace el {
 
     typedef std::shared_ptr<class ImageData> ImageDataPtr;
 
+    uint32_t getBytesPerPixel(PixelFormat format);
+
     class ImageData
     {
     public:
 
         static ImageDataPtr load(const std::string& filename);
 
+        const char* data() const;
+        char* data();
+        uint32_t getBytesPerRow() const;
+        
         uint32_t width;
         uint32_t height;
         uint32_t depth;
         std::vector<char> stream;
         PixelFormat format;
     };
+    
+    inline const char* ImageData::data() const
+    {
+        return stream.data();
+    }
+    
+    inline char* ImageData::data()
+    {
+        return stream.data();
+    }
 }
 
 #endif // __EL_IMAGE_H__

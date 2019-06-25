@@ -9,6 +9,57 @@
 #include <string>
 #include <chrono>
 
+const char vertexShaderSrc[] = R"""(
+#include <metal_stdlib>
+using namespace metal;
+
+typedef struct
+{
+    packed_float3 position;
+    packed_float2 texcoord;
+} vertex_t;
+
+typedef struct
+{
+    float4 clipSpacePosition [[position]];
+    float2 textureCoordinate;
+} RasterizerData;
+
+vertex RasterizerData main0(
+                            const device vertex_t* vertexArray [[buffer(0)]],
+                            unsigned int vID[[vertex_id]])
+{
+    RasterizerData data;
+    data.clipSpacePosition = float4(vertexArray[vID].position, 1.0);
+    data.textureCoordinate = vertexArray[vID].texcoord;
+    return data;
+}
+)""";
+    
+const char fragmentShaderSrc[] = R"""(
+#include <metal_stdlib>
+using namespace metal;
+
+typedef struct
+{
+    float4 clipSpacePosition [[position]];
+    float2 textureCoordinate;
+} RasterizerData;
+
+fragment half4 main0(
+                     RasterizerData in [[stage_in]],
+                     texture2d<half> colorTexture [[texture(0)]])
+{
+    constexpr sampler textureSampler (mag_filter::nearest,
+                                      min_filter::nearest);
+    // Sample the texture to obtain a color
+    const half4 colorSample = colorTexture.sample(textureSampler, in.textureCoordinate);
+    
+    // We return the color of the texture
+    return colorSample;
+}
+)""";
+    
 static void quit(GLFWwindow *window, int key, int scancode, int action, int mods)
 {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -30,7 +81,7 @@ struct TickTok
         point = clock::now();
     }
     
-    void tok(const char* str) {
+    void tock(const char* str) {
         auto last = clock::now();
         auto timeElapsed = std::chrono::duration_cast<std::chrono::microseconds>(last - point);
         auto elpased = static_cast<float>(timeElapsed.count() / 1000.0);
@@ -40,6 +91,17 @@ struct TickTok
     }
 };
 
+id<MTLFunction> createFunction(id<MTLDevice> gpu, const char* source)
+{
+    NSString* objcSource = [NSString stringWithCString:source
+                                              encoding:NSUTF8StringEncoding];
+    NSError *error = nil;
+    id<MTLLibrary> library = [gpu newLibraryWithSource:objcSource options:nil error:&error];
+    id<MTLFunction> function = [library newFunctionWithName:@"main0"];
+    [library release];
+    return function;
+}
+    
 int main(void)
 {
     const id<MTLDevice> gpu = MTLCreateSystemDefaultDevice();
@@ -60,22 +122,45 @@ int main(void)
 
     TickTok tick;
     
-    auto miku = el::ImageData::load("../../miku.jpg");
-    assert(miku != nullptr);
+    el::ImageDataPtr miku[2];
+    miku[0] = el::ImageData::load("../../miku.jpg");
+    miku[1] = el::ImageData::load("../../miku.jpg");
+    assert(miku[0] != nullptr);
+    assert(miku[1] != nullptr);
+    
+    tick.tock("image load x2");
+    
+    id<MTLFunction> vertexFunction = createFunction(gpu, vertexShaderSrc);
+    id<MTLFunction> fragmentFunction = createFunction(gpu, fragmentShaderSrc);
+ 
+    NSError* error = nil;
 
-    tick.tok("image load");
+    auto pipelineDesc = [MTLRenderPipelineDescriptor new];
+    pipelineDesc.vertexFunction = vertexFunction;
+    pipelineDesc.fragmentFunction = fragmentFunction;
+    pipelineDesc.colorAttachments[0].pixelFormat = MTLPixelFormatBGRA8Unorm;
+    id<MTLRenderPipelineState> pipelineState = [gpu newRenderPipelineStateWithDescriptor:pipelineDesc error:&error];
+    
+    [pipelineDesc release];
+    
+    assert(pipeline != nil);
+    
+    tick.tock("pipeline create");
+    
+    const auto width = miku[0]->width;
+    const auto height = miku[0]->height;
+    const uint32_t bytesPerRow = miku[0]->getBytesPerRow();
     
     auto texDesc = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:MTLPixelFormatRGBA8Unorm
-                                                                      width:miku->width
-                                                                     height:miku->height
+                                                                      width:width
+                                                                     height:height
                                                                   mipmapped:NO];
     
-    const uint32_t bytesPerRow = 4 * miku->width;
-    MTLRegion region = MTLRegionMake2D(0, 0, miku->width, miku->height);
+
+    MTLRegion region = MTLRegionMake2D(0, 0, width, height);
     id<MTLTexture> texture = [gpu newTextureWithDescriptor:texDesc];
-    auto data = miku->stream.data();
     
-    tick.tok("texture create");
+    tick.tock("texture create");
     
     uint32_t frame = 0;
     
@@ -84,15 +169,18 @@ int main(void)
 
         @autoreleasepool {
             
-            if (frame++ % 2 == 0) {
+            if (frame % 2 == 0) {
                 tick.tic();
                 
+                auto data = miku[frame % 2]->data();
+
                 [texture replaceRegion:region
                            mipmapLevel:0
                              withBytes:data
                            bytesPerRow:bytesPerRow];
                 
-                tick.tok("upload texture");
+                tick.tock("upload texture");
+                frame++;
             }
             
             color.red = (color.red > 1.0) ? 0 : color.red + 0.01;
@@ -107,9 +195,11 @@ int main(void)
 
             id<MTLCommandBuffer> buffer = [queue commandBuffer];
             id<MTLRenderCommandEncoder> encoder = [buffer renderCommandEncoderWithDescriptor:pass];
+            [encoder setRenderPipelineState:pipelineState];
             [encoder endEncoding];
             [buffer presentDrawable:surface];
             [buffer commit];
+            [buffer waitUntilCompleted];
         }
     }
 
