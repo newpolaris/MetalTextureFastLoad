@@ -162,6 +162,31 @@ int main(void)
     
     tick.tock("texture create");
     
+    void* vertices = nullptr;
+    
+    float positions[] =
+    {
+         0.0,  0.5, 0, 1,
+        -0.5, -0.5, 0, 1,
+         0.5, -0.5, 0, 1,
+    };
+ 
+    static const float colors[] =
+    {
+        1, 0, 0, 1,
+        0, 1, 0, 1,
+        0, 0, 1, 1,
+    };
+ 
+        self.positionBuffer = [self.device newBufferWithBytes:positions
+                                                       length:sizeof(positions)
+                                                      options:MTLResourceOptionCPUCacheModeDefault];
+        self.colorBuffer = [self.device newBufferWithBytes:colors
+                                                    length:sizeof(colors)
+                                                   options:MTLResourceOptionCPUCacheModeDefault];
+    }
+    id<MTLBuffer> vertexBuffer = [gpu newBufferWithBytes:vertices length:0 options:MTLResourceOptionCPUCacheModeDefault];
+    
     uint32_t frame = 0;
     
     while (!glfwWindowShouldClose(window)) {
@@ -197,6 +222,9 @@ int main(void)
             id<MTLCommandBuffer> buffer = [queue commandBuffer];
             id<MTLRenderCommandEncoder> encoder = [buffer renderCommandEncoderWithDescriptor:pass];
             [encoder setRenderPipelineState:pipelineState];
+            [encoder setFragmentTexture:texture atIndex:0];
+            [encoder setVertexBuffer:vertexBuffer offset:0 atIndex:0];
+            [encoder drawPrimitives:MTLPrimitiveTypeTriangle vertexStart:0 vertexCount:3];
             [encoder endEncoding];
             [buffer presentDrawable:surface];
             [buffer commit];
