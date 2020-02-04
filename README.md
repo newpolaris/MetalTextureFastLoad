@@ -1,3 +1,21 @@
+Working in progress
+
+
+just comparing various method that update texture
+
+bgfx use replaceRegion when m_renderCommandEncoder exist
+else, use blitcommandEncoder
+
+TODO: async update
+
+ref; 
+
+https://github.com/bkaradzic/bgfx/blob/master/src/renderer_mtl.mm
+https://blog.roblox.com/2016/12/metal-retrospective/
+
+
+
+
 RGB 5120 × 2880 jpg
 
 # debug mode
@@ -12,8 +30,8 @@ RGB 5120 × 2880 jpg
 2019-06-25 01:29:51.023269+0900 MetalTextureFastLoad[13538:736712] [texture create] 0.614000 ms
 2019-06-25 01:29:51.056690+0900 MetalTextureFastLoad[13538:736712] [upload texture] 33.417999 ms
 
+???
+
 2019-06-25 01:30:50.877403+0900 MetalTextureFastLoad[13609:737635] [image load] 173.033997 ms
 2019-06-25 01:30:50.877982+0900 MetalTextureFastLoad[13609:737635] [texture create] 0.589000 ms
 2019-06-25 01:30:51.728657+0900 MetalTextureFastLoad[13609:737635] [upload texture] 850.700989 ms
-
-https://github.com/bkaradzic/bgfx/blob/master/src/renderer_mtl.mm

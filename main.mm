@@ -143,7 +143,7 @@ int main(void)
     
     [pipelineDesc release];
     
-    assert(pipeline != nil);
+    assert(pipelineState != nil);
     
     tick.tock("pipeline create");
     
@@ -169,7 +169,8 @@ int main(void)
 
         @autoreleasepool {
             
-            if (frame % 2 == 0) {
+            // trying to test aysnc texture load ?
+            if (true) {
                 tick.tic();
                 
                 auto data = miku[frame % 2]->data();

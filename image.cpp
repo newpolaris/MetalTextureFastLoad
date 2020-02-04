@@ -25,9 +25,11 @@ ImageDataPtr ImageData::load(const std::string& filename)
     stbi_set_flip_vertically_on_load(true);
 
     int width = 0, height = 0, components = 0;
-    auto imagedata = (char*)stbi_load(filename.c_str(), &width, &height, &components, 3);
+    auto imagedata = (char*)stbi_load(filename.c_str(), &width, &height, &components, 4);
     if (!imagedata) return nullptr;
 
+    components = 4;
+    
     // 1-byte aligment image
     const size_t length = width * height * components;
 
