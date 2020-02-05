@@ -15,7 +15,7 @@ using namespace metal;
 
 typedef struct
 {
-    packed_float3 position;
+    packed_float4 position;
     packed_float2 texcoord;
 } vertex_t;
 
@@ -30,7 +30,7 @@ vertex RasterizerData main0(
                             unsigned int vID[[vertex_id]])
 {
     RasterizerData data;
-    data.clipSpacePosition = float4(vertexArray[vID].position, 1.0);
+    data.clipSpacePosition = vertexArray[vID].position;
     data.textureCoordinate = vertexArray[vID].texcoord;
     return data;
 }
@@ -161,31 +161,18 @@ int main(void)
     id<MTLTexture> texture = [gpu newTextureWithDescriptor:texDesc];
     
     tick.tock("texture create");
-    
-    void* vertices = nullptr;
-    
-    float positions[] =
-    {
-         0.0,  0.5, 0, 1,
-        -0.5, -0.5, 0, 1,
-         0.5, -0.5, 0, 1,
+
+    struct Vertex {
+        float position[4];
+        float coord[2];
     };
- 
-    static const float colors[] =
-    {
-        1, 0, 0, 1,
-        0, 1, 0, 1,
-        0, 0, 1, 1,
+    Vertex fulltriangle[] = {
+        { {-1, -1, 0, 1}, {0, 0} },
+        { { 3, -1, 0, 1}, {2, 0} },
+        { {-1,  3, 0, 1}, {0, 2} },
     };
- 
-        self.positionBuffer = [self.device newBufferWithBytes:positions
-                                                       length:sizeof(positions)
-                                                      options:MTLResourceOptionCPUCacheModeDefault];
-        self.colorBuffer = [self.device newBufferWithBytes:colors
-                                                    length:sizeof(colors)
-                                                   options:MTLResourceOptionCPUCacheModeDefault];
-    }
-    id<MTLBuffer> vertexBuffer = [gpu newBufferWithBytes:vertices length:0 options:MTLResourceOptionCPUCacheModeDefault];
+    
+    id<MTLBuffer> vertexBuffer = [gpu newBufferWithBytes:fulltriangle length:sizeof(fulltriangle) options:MTLResourceOptionCPUCacheModeDefault];
     
     uint32_t frame = 0;
     
